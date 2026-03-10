@@ -1,40 +1,80 @@
 <!DOCTYPE html>
-<html>
+<html lang="uz">
 <head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Dashboard</title>
-
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 <style>
 
 body{
-font-family:Arial;
-background:#f5f6fa;
 margin:0;
+font-family:Arial;
+background:#f4f6f9;
 }
+
+/* header */
+
+.header{
+background:#2c3e50;
+color:white;
+padding:15px 30px;
+font-size:20px;
+}
+
+/* sidebar */
 
 .sidebar{
 width:220px;
 height:100vh;
-background:#2f3640;
-color:white;
+background:#34495e;
 position:fixed;
-padding:20px;
+color:white;
+padding-top:20px;
 }
 
+.sidebar a{
+display:block;
+color:white;
+padding:12px 20px;
+text-decoration:none;
+}
+
+.sidebar a:hover{
+background:#2c3e50;
+}
+
+/* main */
+
 .main{
-margin-left:240px;
-padding:20px;
+margin-left:220px;
+padding:30px;
+}
+
+/* cards */
+
+.cards{
+display:flex;
+gap:20px;
+flex-wrap:wrap;
 }
 
 .card{
 background:white;
 padding:20px;
-border-radius:10px;
 width:200px;
-display:inline-block;
-margin:10px;
-box-shadow:0 2px 5px rgba(0,0,0,0.1);
+border-radius:10px;
+box-shadow:0 2px 8px rgba(0,0,0,0.1);
+}
+
+.card h3{
+margin:0;
+color:#555;
+}
+
+.card p{
+font-size:28px;
+margin-top:10px;
 }
 
 </style>
@@ -42,46 +82,44 @@ box-shadow:0 2px 5px rgba(0,0,0,0.1);
 
 <body>
 
+<div class="header">
+Dashboard
+</div>
+
 <div class="sidebar">
-<h2>Dashboard</h2>
-<p>Home</p>
-<p>Users</p>
-<p>Reports</p>
+
+<a href="#">Bosh sahifa</a>
+<a href="#">Foydalanuvchilar</a>
+<a href="#">Statistika</a>
+<a href="#">Hisobotlar</a>
+<a href="#">Sozlamalar</a>
+
 </div>
 
 <div class="main">
 
-<div class="card">
-<h3>Users</h3>
-<h1>120</h1>
-</div>
+<h2>Bosh Oyna</h2>
+
+<div class="cards">
 
 <div class="card">
-<h3>Sales</h3>
-<h1>540</h1>
+<h3>Foydalanuvchilar</h3>
+<p>120</p>
 </div>
 
-<canvas id="chart"></canvas>
+<div class="card">
+<h3>Buyurtmalar</h3>
+<p>54</p>
+</div>
+
+<div class="card">
+<h3>Daromad</h3>
+<p>$1,200</p>
+</div>
 
 </div>
 
-<script>
-
-const ctx=document.getElementById('chart');
-
-new Chart(ctx,{
-type:'bar',
-data:{
-labels:['Jan','Feb','Mar','Apr'],
-datasets:[{
-label:'Sales',
-data:[12,19,8,15],
-backgroundColor:'#4cd137'
-}]
-}
-});
-
-</script>
+</div>
 
 </body>
 </html>
