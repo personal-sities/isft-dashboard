@@ -3,123 +3,185 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Dashboard</title>
+<title>LMS Dashboard</title>
 
 <style>
+*{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+}
 
 body{
-margin:0;
-font-family:Arial;
-background:#f4f6f9;
+    font-family:Arial, sans-serif;
+    background:#f4f4f4;
 }
 
-/* header */
-
+/* HEADER */
 .header{
-background:#2c3e50;
-color:white;
-padding:15px 30px;
-font-size:20px;
+    height:60px;
+    background:#8b0000;
+    color:#fff;
+    display:flex;
+    align-items:center;
+    padding:0 20px;
+    position:fixed;
+    top:0;
+    left:0;
+    right:0;
+    z-index:1000;
+    box-shadow:0 2px 6px rgba(0,0,0,0.15);
 }
 
-/* sidebar */
+.logo{
+    font-size:20px;
+    font-weight:bold;
+    margin-left:15px;
+}
 
+/* MENU BUTTON */
+.menu-btn{
+    font-size:28px;
+    cursor:pointer;
+    background:none;
+    border:none;
+    color:#fff;
+}
+
+/* SIDEBAR */
 .sidebar{
-width:220px;
-height:100vh;
-background:#34495e;
-position:fixed;
-color:white;
-padding-top:20px;
+    position:fixed;
+    top:60px;
+    left:-260px;
+    width:260px;
+    height:calc(100vh - 60px);
+    background:#ffffff;
+    box-shadow:2px 0 10px rgba(0,0,0,0.12);
+    transition:0.3s;
+    z-index:999;
+    overflow-y:auto;
+    padding-top:10px;
+}
+
+.sidebar.active{
+    left:0;
 }
 
 .sidebar a{
-display:block;
-color:white;
-padding:12px 20px;
-text-decoration:none;
+    display:block;
+    padding:16px 22px;
+    text-decoration:none;
+    color:#222;
+    font-size:17px;
+    border-bottom:1px solid #f1f1f1;
 }
 
 .sidebar a:hover{
-background:#2c3e50;
+    background:#f7f7f7;
 }
 
-/* main */
-
+/* MAIN */
 .main{
-margin-left:220px;
-padding:30px;
+    padding:90px 20px 20px 20px;
+    transition:0.3s;
 }
 
-/* cards */
+.main.shift{
+    margin-left:260px;
+}
+
+.page-title{
+    font-size:32px;
+    font-weight:bold;
+    margin-bottom:25px;
+    color:#111;
+}
 
 .cards{
-display:flex;
-gap:20px;
-flex-wrap:wrap;
+    display:flex;
+    flex-wrap:wrap;
+    gap:20px;
 }
 
 .card{
-background:white;
-padding:20px;
-width:200px;
-border-radius:10px;
-box-shadow:0 2px 8px rgba(0,0,0,0.1);
+    background:#fff;
+    width:220px;
+    padding:20px;
+    border-radius:10px;
+    box-shadow:0 2px 8px rgba(0,0,0,0.08);
 }
 
 .card h3{
-margin:0;
-color:#555;
+    font-size:18px;
+    color:#555;
+    margin-bottom:10px;
 }
 
 .card p{
-font-size:28px;
-margin-top:10px;
+    font-size:30px;
+    font-weight:bold;
+    color:#222;
 }
 
+/* MOBILE */
+@media (max-width:768px){
+    .main.shift{
+        margin-left:0;
+    }
+
+    .card{
+        width:100%;
+    }
+}
 </style>
 </head>
-
 <body>
 
 <div class="header">
-Dashboard
+    <button class="menu-btn" onclick="toggleMenu()">☰</button>
+    <div class="logo">LMS</div>
 </div>
 
-<div class="sidebar">
-
-<a href="#">Bosh sahifa</a>
-<a href="#">Foydalanuvchilar</a>
-<a href="#">Statistika</a>
-<a href="#">Hisobotlar</a>
-<a href="#">Sozlamalar</a>
-
+<div class="sidebar" id="sidebar">
+    <a href="#">Boshqaruv paneli</a>
+    <a href="#">Articulate</a>
+    <a href="#">Hujjatlar</a>
+    <a href="#">Kutubxonalar</a>
+    <a href="#">Talabalar</a>
+    <a href="#">Talabalar harakati</a>
+    <a href="#">Ta'lim jarayonlari</a>
+    <a href="#">Kadrlar bo'limi</a>
+    <a href="#">Davomat</a>
+    <a href="#">Imtihonlar</a>
 </div>
 
-<div class="main">
+<div class="main" id="main">
+    <div class="page-title">Bosh Oyna</div>
 
-<h2>Bosh Oyna</h2>
+    <div class="cards">
+        <div class="card">
+            <h3>Foydalanuvchilar</h3>
+            <p>120</p>
+        </div>
 
-<div class="cards">
+        <div class="card">
+            <h3>Buyurtmalar</h3>
+            <p>54</p>
+        </div>
 
-<div class="card">
-<h3>Foydalanuvchilar</h3>
-<p>120</p>
+        <div class="card">
+            <h3>Daromad</h3>
+            <p>$1,200</p>
+        </div>
+    </div>
 </div>
 
-<div class="card">
-<h3>Buyurtmalar</h3>
-<p>54</p>
-</div>
-
-<div class="card">
-<h3>Daromad</h3>
-<p>$1,200</p>
-</div>
-
-</div>
-
-</div>
+<script>
+function toggleMenu() {
+    document.getElementById("sidebar").classList.toggle("active");
+    document.getElementById("main").classList.toggle("shift");
+}
+</script>
 
 </body>
 </html>
