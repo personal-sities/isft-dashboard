@@ -378,14 +378,12 @@
   <script>
     // DEMO MA'LUMOTLAR
     // Keyin buni Google Sheetsdan keladigan data bilan almashtirasiz
-    const allData = [
-      { date: "2026-03-13", ism: "Ali", bolim: "Call center", telefon: "971700454", holat: "Faol" },
-      { date: "2026-03-13", ism: "Vali", bolim: "Monitoring", telefon: "901112233", holat: "Nofaol" },
-      { date: "2026-03-12", ism: "Sardor", bolim: "Klinika", telefon: "931234567", holat: "Faol" },
-      { date: "2026-03-11", ism: "Madina", bolim: "Maktab", telefon: "991234567", holat: "Faol" },
-      { date: "2026-03-10", ism: "Aziza", bolim: "Universitet", telefon: "945551212", holat: "Nofaol" }
-    ];
-
+    fetch("AKfycbybpat7F5FLQeIEyTmgXv_36DtRNQKZD_fQ-1vWQ64FLE_kDQ8-l_AYMGI-o52KxC1L")
+  .then(res => res.json())
+  .then(data => {
+    allData = data;
+    applyFilter();
+  });
     const tableBody = document.getElementById("tableBody");
     const totalCount = document.getElementById("totalCount");
     const activeCount = document.getElementById("activeCount");
