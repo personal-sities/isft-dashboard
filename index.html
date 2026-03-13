@@ -8,6 +8,7 @@
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
   <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2"></script>
 
   <style>
     *{
@@ -387,12 +388,19 @@
 
     .chart-card{
       padding:18px;
+      overflow:hidden;
     }
 
     .chart-title{
       font-size:20px;
       font-weight:700;
       margin-bottom:16px;
+      color:#1f2937;
+    }
+
+    .chart-wrap{
+      position:relative;
+      height:430px;
     }
 
     .table-card{
@@ -496,6 +504,10 @@
 
       .page-title{
         font-size:30px;
+      }
+
+      .chart-wrap{
+        height:380px;
       }
     }
 
@@ -618,12 +630,16 @@
         <div class="charts-grid">
           <div class="card chart-card">
             <div class="chart-title">Ism familiya bo‘yicha kechikishlar soni</div>
-            <canvas id="countChart"></canvas>
+            <div class="chart-wrap">
+              <canvas id="countChart"></canvas>
+            </div>
           </div>
 
           <div class="card chart-card">
             <div class="chart-title">Ism familiya bo‘yicha kechikish daqiqalari yig‘indisi</div>
-            <canvas id="sumChart"></canvas>
+            <div class="chart-wrap">
+              <canvas id="sumChart"></canvas>
+            </div>
           </div>
         </div>
 
@@ -676,12 +692,12 @@
     const DEMO_LOGIN = "admin";
     const DEMO_PASSWORD = "12345";
 
-    // SHEETDAN KELADIGAN MA'LUMOT SHU FORMATDA BO'LISHI KERAK
-    // A = F.I.O.
-    // B = Date
-    // C = Hours
-    // D = Kechikkan daqiqasi
-    const rawData = [
+    // Google Sheetdan keladigan ma'lumot shu formatda bo'lishi kerak
+    // fio, date, hours, lateText
+    // Masalan:
+    // { fio: "Ali Valiyev", date: "2026-03-13", hours: "09:12:00", lateText: "12 daqiqa" }
+
+    let rawData = [
       { fio: "Ergashboyeva Donoxon", date: "2025-11-28", hours: "8:49:21", lateText: "Kechikmadi" },
       { fio: "Abdukarimova Ra'no", date: "2025-11-28", hours: "8:52:27", lateText: "Kechikmadi" },
       { fio: "Abdullayeva Shaxzoda", date: "2025-11-28", hours: "8:58:43", lateText: "Kechikmadi" },
@@ -718,11 +734,19 @@
       { fio: "Abdullayeva Shaxzoda", date: "2025-12-05", hours: "9:02:49", lateText: "2 daqiqa" }
     ];
 
+    let preparedData = [];
     let countChartInstance = null;
     let sumChartInstance = null;
 
+    const CHART_COLORS = [
+      "#4da3ff", "#ff3b6b", "#95d83a", "#f3c13a", "#e7b0cf",
+      "#82c8e8", "#ff94aa", "#67b82f", "#e0a000", "#b974c7",
+      "#2f7de1", "#22c55e", "#f97316", "#8b5cf6", "#14b8a6",
+      "#ef4444", "#eab308", "#06b6d4", "#10b981", "#6366f1"
+    ];
+
     function parseLateText(text) {
-      const clean = String(text).trim().toLowerCase();
+      const clean = String(text || "").trim().toLowerCase();
 
       if (clean === "kechikmadi") {
         return { lateCount: 0, lateMinutes: 0 };
@@ -737,18 +761,20 @@
 
       return {
         lateCount: minutes > 0 ? 1 : 0,
-        lateMinutes: minutes
+        lateMinutes: minutes > 0 ? minutes : 0
       };
     }
 
-    const preparedData = rawData.map(item => {
-      const parsed = parseLateText(item.lateText);
-      return {
-        ...item,
-        lateCount: parsed.lateCount,
-        lateMinutes: parsed.lateMinutes
-      };
-    });
+    function buildPreparedData() {
+      preparedData = rawData.map(item => {
+        const parsed = parseLateText(item.lateText);
+        return {
+          ...item,
+          lateCount: parsed.lateCount,
+          lateMinutes: parsed.lateMinutes
+        };
+      });
+    }
 
     const tableBody = document.getElementById("tableBody");
     const totalRecords = document.getElementById("totalRecords");
@@ -758,6 +784,7 @@
     const rangeLabel = document.getElementById("rangeLabel");
 
     function fillEmployeeFilter() {
+      employeeFilter.innerHTML = `<option value="">Barchasi</option>`;
       const names = [...new Set(preparedData.map(item => item.fio))].sort((a,b) => a.localeCompare(b));
       names.forEach(name => {
         const option = document.createElement("option");
@@ -828,87 +855,165 @@
         map[item.fio].lateMinutes += item.lateMinutes;
       });
 
-      return Object.values(map).sort((a, b) => b.lateCount - a.lateCount);
+      return Object.values(map).sort((a, b) => b.lateMinutes - a.lateMinutes);
     }
 
-    function renderCharts(aggregated) {
-      const labels = aggregated.map(item => item.fio);
-      const counts = aggregated.map(item => item.lateCount);
-      const sums = aggregated.map(item => item.lateMinutes);
+    function buildPerEmployeeDatasets(labels, values) {
+      return labels.map((label, index) => ({
+        label,
+        data: labels.map((_, i) => i === index ? values[index] : null),
+        backgroundColor: CHART_COLORS[index % CHART_COLORS.length],
+        borderColor: CHART_COLORS[index % CHART_COLORS.length],
+        borderWidth: 0,
+        borderRadius: 0,
+        borderSkipped: false,
+        barThickness: 38,
+        categoryPercentage: 0.9,
+        barPercentage: 0.95
+      }));
+    }
 
-      if (countChartInstance) countChartInstance.destroy();
-      if (sumChartInstance) sumChartInstance.destroy();
+    function getCommonChartOptions() {
+      return {
+        responsive: true,
+        maintainAspectRatio: false,
+        layout: {
+          padding: {
+            top: 12,
+            right: 10,
+            bottom: 0,
+            left: 0
+          }
+        },
+        plugins: {
+          legend: {
+            display: true,
+            position: "bottom",
+            align: "start",
+            labels: {
+              color: "#6b7280",
+              usePointStyle: true,
+              pointStyle: "circle",
+              boxWidth: 10,
+              boxHeight: 10,
+              padding: 16,
+              font: {
+                size: 12,
+                weight: "600"
+              }
+            }
+          },
+          tooltip: {
+            backgroundColor: "#1f2937",
+            titleColor: "#ffffff",
+            bodyColor: "#ffffff",
+            callbacks: {
+              label: function(context) {
+                return `${context.dataset.label}: ${context.raw ?? 0}`;
+              }
+            }
+          },
+          datalabels: {
+            color: "#ffffff",
+            anchor: "center",
+            align: "center",
+            font: {
+              weight: "700",
+              size: 14
+            },
+            formatter: function(value) {
+              return value && value > 0 ? value : "";
+            }
+          }
+        },
+        scales: {
+          x: {
+            ticks: {
+              color: "#6b7280",
+              maxRotation: 50,
+              minRotation: 50,
+              autoSkip: false,
+              font: {
+                size: 12
+              }
+            },
+            grid: {
+              display: false
+            },
+            border: {
+              color: "#d1d5db"
+            }
+          },
+          y: {
+            beginAtZero: true,
+            ticks: {
+              color: "#6b7280",
+              font: {
+                size: 12
+              }
+            },
+            grid: {
+              color: "#eceff3"
+            },
+            border: {
+              color: "#d1d5db"
+            }
+          }
+        }
+      };
+    }
+
+    function renderCountChart(aggregated) {
+      const labels = aggregated.map(item => item.fio);
+      const values = aggregated.map(item => item.lateCount);
+
+      if (countChartInstance) {
+        countChartInstance.destroy();
+      }
 
       countChartInstance = new Chart(document.getElementById("countChart"), {
         type: "bar",
         data: {
-          labels: labels,
-          datasets: [{
-            label: "Kechikishlar soni",
-            data: counts,
-            backgroundColor: "#7b0f16",
-            borderRadius: 8
-          }]
+          labels,
+          datasets: buildPerEmployeeDatasets(labels, values)
         },
+        plugins: [ChartDataLabels],
         options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          plugins: {
-            legend: { display: false }
-          },
+          ...getCommonChartOptions(),
           scales: {
-            x: {
-              ticks: {
-                maxRotation: 45,
-                minRotation: 30,
-                color: "#374151"
-              },
-              grid: { display: false }
-            },
+            ...getCommonChartOptions().scales,
             y: {
-              beginAtZero: true,
-              ticks: { stepSize: 1, color: "#374151" }
+              ...getCommonChartOptions().scales.y,
+              ticks: {
+                color: "#6b7280",
+                stepSize: 1,
+                font: {
+                  size: 12
+                }
+              }
             }
           }
         }
       });
+    }
+
+    function renderSumChart(aggregated) {
+      const labels = aggregated.map(item => item.fio);
+      const values = aggregated.map(item => item.lateMinutes);
+
+      if (sumChartInstance) {
+        sumChartInstance.destroy();
+      }
 
       sumChartInstance = new Chart(document.getElementById("sumChart"), {
         type: "bar",
         data: {
-          labels: labels,
-          datasets: [{
-            label: "Kechikish daqiqalari yig‘indisi",
-            data: sums,
-            backgroundColor: "#b4232c",
-            borderRadius: 8
-          }]
+          labels,
+          datasets: buildPerEmployeeDatasets(labels, values)
         },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          plugins: {
-            legend: { display: false }
-          },
-          scales: {
-            x: {
-              ticks: {
-                maxRotation: 45,
-                minRotation: 30,
-                color: "#374151"
-              },
-              grid: { display: false }
-            },
-            y: {
-              beginAtZero: true,
-              ticks: { color: "#374151" }
-            }
-          }
-        }
+        plugins: [ChartDataLabels],
+        options: getCommonChartOptions()
       });
-
-      document.getElementById("countChart").parentElement.style.height = "420px";
-      document.getElementById("sumChart").parentElement.style.height = "420px";
     }
 
     function applyFilter() {
@@ -938,17 +1043,16 @@
         filtered = filtered.filter(item => item.fio === selectedEmployee);
       }
 
-      if (startDate === endDate) {
-        rangeLabel.textContent = `${startDate}`;
-      } else {
-        rangeLabel.textContent = `${startDate} dan ${endDate} gacha`;
-      }
+      rangeLabel.textContent = startDate === endDate
+        ? startDate
+        : `${startDate} dan ${endDate} gacha`;
 
       renderTable(filtered);
       updateStats(filtered);
 
       const aggregated = aggregateByEmployee(filtered);
-      renderCharts(aggregated);
+      renderCountChart(aggregated);
+      renderSumChart(aggregated);
     }
 
     document.getElementById("applyBtn").addEventListener("click", applyFilter);
@@ -1031,7 +1135,33 @@
       }
     });
 
+    /*
+      Google Sheet ulash uchun shu funksiyani ishlatasiz.
+      Apps Script JSON qaytarsa, rawData ni shu yerda yangilaysiz.
+
+      async function loadSheetData() {
+        try {
+          const res = await fetch("SIZNING_GOOGLE_APPS_SCRIPT_URL");
+          const data = await res.json();
+
+          rawData = data.map(row => ({
+            fio: row.fio,
+            date: row.date,
+            hours: row.hours,
+            lateText: row.lateText
+          }));
+
+          buildPreparedData();
+          fillEmployeeFilter();
+          applyFilter();
+        } catch (error) {
+          console.error("Sheetdan ma'lumot olishda xatolik:", error);
+        }
+      }
+    */
+
     window.onload = function() {
+      buildPreparedData();
       fillEmployeeFilter();
 
       const isLoggedIn = localStorage.getItem("aloqapro_logged_in");
@@ -1041,6 +1171,9 @@
       }
 
       applyFilter();
+
+      // Google Sheetdan olsa, yuqoridagi loadSheetData() ni ochib shu yerda chaqirasiz:
+      // loadSheetData();
     };
   </script>
 </body>
